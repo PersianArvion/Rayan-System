@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ایجاد مهارت | تک‌مارکت</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">تک‌مارکت</a>
+        </div>
+    </header>
+
+    <div class="container" style="padding: 2rem;">
+        <div class="auth-box">
+            <h2>ثبت مهارت جدید</h2>
+            <p>اگر مهارتی در قطعات کامپیوتر دارید، به ما معرفی کنید.</p>
+            <form id="skillForm">
+                <div class="form-group">
+                    <label>نام مهارت</label>
+                    <input type="text" placeholder="مثال: تعمیر لپ‌تاپ، اسمبل..." required>
+                </div>
+                <div class="form-group">
+                    <label>توضیحات</label>
+                    <textarea rows="4" style="width:100%; padding:0.8rem; border:1px solid #ddd; border-radius:8px;"></textarea>
+                </div>
+                <button type="submit" class="btn-full">ارسال مهارت</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        document.getElementById('skillForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            showToast('مهارت شما ثبت شد و پس از بررسی منتشر خواهد شد.');
+            e.target.reset();
+        });
+    </script>
+</body>
+</html>

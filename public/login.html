@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود / ثبت نام | تک‌مارکت</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Vazir', sans-serif; background: #F7F7F9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .auth-container { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
+        h2 { text-align: center; margin-bottom: 24px; color: #0F172A; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; color: #475569; }
+        input { width: 100%; padding: 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-family: inherit; box-sizing: border-box; }
+        input:focus { outline: none; border-color: #2563EB; }
+        button { width: 100%; padding: 12px; background: #2563EB; color: white; border: none; border-radius: 8px; font-family: inherit; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #1D4ED8; }
+        .toggle-link { text-align: center; margin-top: 16px; font-size: 0.9rem; }
+        .toggle-link a { color: #2563EB; cursor: pointer; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- فرم ورود -->
+        <div id="loginSection">
+            <h2>ورود به حساب</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>ایمیل</label>
+                    <input type="email" id="email" required placeholder="example@mail.com">
+                </div>
+                <div class="form-group">
+                    <label>رمز عبور</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit">ورود</button>
+            </form>
+            <div class="toggle-link">
+                حساب ندارید؟ <a onclick="toggleAuth('register')">ثبت نام کنید</a>
+            </div>
+        </div>
+
+        <!-- فرم ثبت نام -->
+        <div id="registerSection" class="hidden">
+            <h2>ثبت نام</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>نام کاربری</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label>ایمیل</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label>رمز عبور</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit">ثبت نام</button>
+            </form>
+            <div class="toggle-link">
+                حساب دارید؟ <a onclick="toggleAuth('login')">وارد شوید</a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/js/main.js"></script>
+</body>
+</html>

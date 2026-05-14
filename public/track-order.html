@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پیگیری سفارش | تک‌مارکت</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">تک‌مارکت</a>
+        </div>
+    </header>
+    <div class="container" style="padding: 2rem;">
+        <h2>پیگیری سفارش</h2>
+        <p>لطفا شماره سفارش خود را وارد کنید:</p>
+        <form id="trackForm" style="max-width: 400px; margin: 20px auto;">
+            <input type="text" id="orderId" placeholder="شماره سفارش" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+            <button type="submit" class="btn-primary" style="width: 100%;">جستجو</button>
+        </form>
+        <div id="trackResult"></div>
+    </div>
+    <script src="/js/main.js"></script>
+    <script>
+        document.getElementById('trackForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('orderId').value;
+            document.getElementById('trackResult').innerHTML = `
+                <div style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-top: 20px;">
+                    <h3>وضعیت سفارش #${id}</h3>
+                    <p>وضعیت: <strong>در حال پردازش</strong></p>
+                    <p>تاریخ: ${new Date().toLocaleDateString('fa-IR')}</p>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>

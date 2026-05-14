@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لپ‌تاپ | تک‌مارکت</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- هدر مشابه index.html -->
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">تک‌مارکت</a>
+            <!-- سایر آیکون‌ها -->
+        </div>
+    </header>
+
+    <div class="container" style="padding: 2rem;">
+        <h1 id="pageTitle">لپ‌تاپ</h1>
+        <div class="products-grid" id="productsGrid"></div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        // برای این صفحه خاص، مطمئن شویم که محصولات لپ‌تاپ فیلتر شوند
+        // در main.js منطق فیلتر بر اساس URL Param نوشته شده است.
+        // اگر می‌خواهید این صفحه جداگانه باشد، URL باید index.html?cat=laptop باشد.
+        // اما چون فایل جداست، می‌توانیم مستقیماً لود کنیم.
+        document.addEventListener('DOMContentLoaded', () => {
+            api.fetchProducts().then(products => {
+                // فرض می‌کنیم محصولات لپ‌تاپ در دیتابیس با نام خاصی هستند یا همه را نشان می‌دهیم
+                // در پروژه واقعی، API باید endpoint /api/products?category=laptop داشته باشد
+                renderProducts(products, 'productsGrid'); 
+            });
+        });
+    </script>
+</body>
+</html>

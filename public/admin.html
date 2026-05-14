@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت | تک‌مارکت</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Vazir', sans-serif; background: #F7F7F9; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: right; border-bottom: 1px solid #E2E8F0; }
+        th { background: #F8FAFC; }
+        .btn-add { background: #2563EB; color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; margin-bottom: 20px; }
+        .btn-logout { background: #EF4444; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; float: left; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <a href="#" class="btn-logout" onclick="auth.logout()">خروج</a>
+            <h2>پنل مدیریت محصولات</h2>
+        </div>
+        
+        <button class="btn-add" onclick="addNewProduct()">افزودن محصول جدید (دمو)</button>
+        
+        <table id="adminTable">
+            <thead>
+                <tr>
+                    <th>نام محصول</th>
+                    <th>قیمت</th>
+                    <th>دسته‌بندی</th>
+                    <th>وضعیت</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="4">در حال بارگذاری...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        // اسکریپت اختصاصی برای ادمین
+        if (document.getElementById('adminPanel') || document.getElementById('adminTable')) {
+            if (!auth.isAdmin()) {
+                window.location.href = 'login.html';
+            }
+
+            async function loadAdminProducts() {
+                const token = auth.getToken();
+                const res = await fetch('http://localhost:3000/api/admin/products', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const products = await res.json();
+                
+                const tbody = document.querySelector('#adminTable tbody');
+                tbody.innerHTML = products.map(p => `
+                    <tr>
+                        <td>${p.name}</td>
+                        <td>${formatPrice(p.price)} تومان</td>
+                        <td>${p.category_name}</td>
+                        <td>${p.is_active ? 'فعال' : 'غیرفعال'}</td>
+                    </tr>
+                `).join('');
+            }
+
+            window.addNewProduct = async () => {
+                const name = prompt("نام محصول جدید:");
+                if (!name) return;
+                const price = prompt("قیمت:");
+                const catId = 1; // پیش فرض دسته اول
+                
+                const token = auth.getToken();
+                await fetch('http://localhost:3000/api/admin/products', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name, price: Number(price), category_id: catId, image_url: 'https://via.placeholder.com/400' })
+                });
+                loadAdminProducts();
+                showToast('محصول اضافه شد');
+            };
+
+            loadAdminProducts();
+        }
+    </script>
+</body>
+</html>
