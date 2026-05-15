@@ -1,94 +1,77 @@
+/**
+ * User Routes
+ * @file backend/routes/user.js
+ */
+
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const dbPromise = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+const { MESSAGES } = require('../config/constants');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'my_secret_key_change_in_production';
-
-// Middleware برای بررسی توکن
-async function authenticateToken(req, res, next) {
-    const timestamp = new Date().toISOString();
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    console.log(`\n👤 [${timestamp}] USER AUTH CHECK`);
-    console.log(`🔐 Token present: ${!!token}`);
-    
-    if (!token) {
-        console.log('❌ No token provided - Unauthorized');
-        return res.sendStatus(401);
-    }
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            console.log(`❌ Token invalid: ${err.message}`);
-            return res.sendStatus(403);
-        }
-        console.log(`✅ Token verified for user ${user.id}`);
-        req.user = user;
-        next();
-    });
-}
-
-// ایجاد سفارش جدید
+/**
+ * POST /api/user/order
+ * Create new order
+ */
 router.post('/order', authenticateToken, async (req, res) => {
     try {
         const { items, total } = req.body;
-        
-        console.log(`\n📦 Creating order for user ${req.user.id}`);
-        console.log(`📋 Items:`, items);
-        console.log(`💰 Total: ${total}`);
+        const userId = req.user.id;
 
         if (!items || items.length === 0) {
-            console.log('⚠️  No items provided');
-            return res.status(400).json({ message: 'لطفاً محصول انتخاب کنید' });
+            return res.status(400).json({ 
+                error: true,
+                message: MESSAGES.ORDER.NO_ITEMS 
+            });
         }
 
         if (!total || total <= 0) {
-            console.log('⚠️  Invalid total');
-            return res.status(400).json({ message: 'مبلغ نامعتبر است' });
+            return res.status(400).json({ 
+                error: true,
+                message: MESSAGES.ORDER.INVALID_TOTAL 
+            });
         }
 
         const db = await dbPromise;
 
-        const result = await db.run(
+        // Create order
+        const orderResult = await db.run(
             "INSERT INTO orders (user_id, total_price, status) VALUES (?, ?, ?)",
-            [req.user.id, total, 'pending']
+            [userId, total, 'pending']
         );
 
-        const orderId = result.id;
-        console.log(`✅ Order created (ID: ${orderId})`);
-
-        // درج اقلام
+        // Add order items
         for (const item of items) {
-            console.log(`  📌 Adding item: ${item.name} (Product ID: ${item.productId}, Qty: ${item.quantity})`);
-            
             await db.run(
                 "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
-                [orderId, item.productId, item.quantity, item.price]
+                [orderResult.id, item.productId, item.quantity, item.price]
             );
         }
 
-        console.log(`✅ All items added to order ${orderId}`);
-        
+        console.log(`✅ Order created: ID ${orderResult.id} for user ${userId}`);
+
         res.status(201).json({
-            message: 'سفارش با موفقیت ثبت شد',
-            orderId,
+            error: false,
+            message: MESSAGES.ORDER.CREATED,
+            orderId: orderResult.id,
             totalPrice: total
         });
     } catch (err) {
         console.error('❌ Order creation error:', err);
         res.status(500).json({ 
-            error: 'خطا در ایجاد سفارش',
-            details: err.message 
+            error: true,
+            message: MESSAGES.GENERAL.SERVER_ERROR 
         });
     }
 });
 
-// دریافت سفارشات کاربر
+/**
+ * GET /api/user/orders
+ * Fetch user orders
+ */
 router.get('/orders', authenticateToken, async (req, res) => {
     try {
-        console.log(`\n📦 Fetching orders for user ${req.user.id}`);
+        const userId = req.user.id;
         const db = await dbPromise;
 
         const orders = await db.all(`
@@ -97,11 +80,9 @@ router.get('/orders', authenticateToken, async (req, res) => {
             JOIN users u ON o.user_id = u.id 
             WHERE o.user_id = ? 
             ORDER BY o.created_at DESC
-        `, [req.user.id]);
+        `, [userId]);
 
-        console.log(`✅ Found ${orders.length} orders`);
-
-        // دریافت جزئیات هر سفارش
+        // Fetch items for each order
         const ordersWithItems = await Promise.all(orders.map(async (order) => {
             const items = await db.all(`
                 SELECT oi.*, p.name as product_name 
@@ -110,37 +91,43 @@ router.get('/orders', authenticateToken, async (req, res) => {
                 WHERE oi.order_id = ?
             `, [order.id]);
             
-            console.log(`  📋 Order ${order.id}: ${items.length} items, Status: ${order.status}`);
             return { ...order, items };
         }));
 
         res.json({
-            message: 'سفارشات دریافت شد',
-            count: ordersWithItems.length,
-            orders: ordersWithItems
+            error: false,
+            data: ordersWithItems,
+            count: ordersWithItems.length
         });
     } catch (err) {
         console.error('❌ Error fetching orders:', err);
         res.status(500).json({ 
-            error: 'خطا در دریافت سفارشات',
-            details: err.message 
+            error: true,
+            message: MESSAGES.GENERAL.SERVER_ERROR 
         });
     }
 });
 
-// دریافت یک سفارش خاص
+/**
+ * GET /api/user/orders/:id
+ * Fetch single order
+ */
 router.get('/orders/:id', authenticateToken, async (req, res) => {
     try {
-        console.log(`\n📦 Fetching order ${req.params.id} for user ${req.user.id}`);
+        const userId = req.user.id;
+        const orderId = req.params.id;
         const db = await dbPromise;
 
-        const order = await db.get(`
-            SELECT * FROM orders WHERE id = ? AND user_id = ?
-        `, [req.params.id, req.user.id]);
+        const order = await db.get(
+            "SELECT * FROM orders WHERE id = ? AND user_id = ?",
+            [orderId, userId]
+        );
 
         if (!order) {
-            console.log(`⚠️  Order not found: ${req.params.id}`);
-            return res.status(404).json({ error: 'سفارش یافت نشد' });
+            return res.status(404).json({ 
+                error: true,
+                message: MESSAGES.ORDER.NOT_FOUND 
+            });
         }
 
         const items = await db.all(`
@@ -150,51 +137,57 @@ router.get('/orders/:id', authenticateToken, async (req, res) => {
             WHERE oi.order_id = ?
         `, [order.id]);
 
-        console.log(`✅ Order ${order.id} retrieved with ${items.length} items`);
-
         res.json({
-            ...order,
-            items
+            error: false,
+            data: { ...order, items }
         });
     } catch (err) {
-        console.error(`❌ Error fetching order ${req.params.id}:`, err);
+        console.error('❌ Error fetching order:', err);
         res.status(500).json({ 
-            error: 'خطا در دریافت سفارش',
-            details: err.message 
+            error: true,
+            message: MESSAGES.GENERAL.SERVER_ERROR 
         });
     }
 });
 
-// دریافت اطلاعات کاربر
+/**
+ * GET /api/user/profile
+ * Fetch user profile
+ */
 router.get('/profile', authenticateToken, async (req, res) => {
     try {
-        console.log(`\n👤 Fetching profile for user ${req.user.id}`);
+        const userId = req.user.id;
         const db = await dbPromise;
 
-        const user = await db.get(`
-            SELECT id, username, email, role, created_at FROM users WHERE id = ?
-        `, [req.user.id]);
+        const user = await db.get(
+            "SELECT id, username, email, role, created_at FROM users WHERE id = ?",
+            [userId]
+        );
 
         if (!user) {
-            console.log(`⚠️  User not found: ${req.user.id}`);
-            return res.status(404).json({ error: 'کاربر یافت نشد' });
+            return res.status(404).json({ 
+                error: true,
+                message: MESSAGES.AUTH.UNAUTHORIZED 
+            });
         }
 
-        const orderCount = await db.get(`
-            SELECT COUNT(*) as count FROM orders WHERE user_id = ?
-        `, [req.user.id]);
-
-        console.log(`✅ Profile retrieved - Orders: ${orderCount.count}`);
+        const orderCount = await db.get(
+            "SELECT COUNT(*) as count FROM orders WHERE user_id = ?",
+            [userId]
+        );
 
         res.json({
-            ...user,
-            totalOrders: orderCount.count
+            error: false,
+            data: {
+                ...user,
+                totalOrders: orderCount.count
+            }
         });
     } catch (err) {
         console.error('❌ Error fetching profile:', err);
         res.status(500).json({ 
-            error: 'خطا در دریافت اطلاعات کاربر',
-            details: err.message 
+            error: true,
+            message: MESSAGES.GENERAL.SERVER_ERROR 
         });
     }
 });
